@@ -1,6 +1,8 @@
 import time
 import json
 import os
+from collections import deque
+
 os.system('cls' if os.name == 'nt' else 'clear')
 
 def menu():
@@ -18,32 +20,24 @@ def menu():
     eleccion = int(input(f"Ingrese la opción que desea: "))
     return eleccion
 
-def leer_catalogo():
-    if not os.path.exists("catalogo.json"):
+def leer_json(nombre):
+    if not os.path.exists(nombre):
         return []
-    with open("catalogo.json", encoding="utf-8") as file:
+    with open(nombre, encoding="utf-8") as file:
         contenido = file.read().strip()
         if not contenido:
             return []
         return json.loads(contenido)
+
+def guardar_json(nombre, data):
+    with open(nombre, "w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+def leer_catalogo():
+    return leer_json("catalogo.json")
 
 def guardar_catalogo(data):
-    with open("catalogo.json", "w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
-
-
-def abrir_vistas():
-    if not os.path.exists("vistas.json"):
-        return []
-    with open("vistas.json", encoding="utf-8") as file:
-        contenido = file.read().strip()
-        if not contenido:
-            return []
-        return json.loads(contenido)
-    
-def guardar_vistas(data):
-    with open("vistas.json", "w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+    guardar_json("catalogo.json", data)
 
 def abrir_catalogo():
     data = leer_catalogo()
@@ -66,6 +60,12 @@ def abrir_catalogo():
         print("")    
     input("\033[91mVolver atrás - Presiona Enter: \033[0m")
     return data
+
+def abrir_vistas():
+    return leer_json("vistas.json")
+
+def guardar_vistas(data):
+    guardar_json("vistas.json", data)
 
 class Historial:
     def __init__(self):
@@ -92,6 +92,7 @@ class Historial:
             print(f"\033[1;38;5;{color}m {contador}- "f"{producto['Título']} - {producto['Editorial']}\033[0m")
             contador += 1
         print("")
+
 guardar_historial = Historial()
 
 class SimpleHashMap:
@@ -187,7 +188,7 @@ def gestion_productos():
                 elif campo == "Stock":
                     producto[campo] = input(f"¿Hay stock? (True/False), actualmente \033[96m{producto[campo]}\033[0m: ").capitalize() == "True"
                 else:
-                    producto[campo] = input(f"Ingrese el nuevo valor para {campo}, valor actuaL \033[96m{producto[campo]}\033[0m: ")
+                    producto[campo] = input(f"Ingrese el nuevo valor para {campo}, valor actual \033[96m{producto[campo]}\033[0m: ")
                 hash_map.put(codigo, producto)
                 catalogo = leer_catalogo()
                 for i, p in enumerate(catalogo):
@@ -251,6 +252,62 @@ def gestion_productos():
     elif eleccion == 5:
         return
 
+def cargar_pedidos():
+    data = leer_json("pedidos.json")
+    return deque(data)
+
+def guardar_pedidos(cola):
+    guardar_json("pedidos.json", list(cola))
+
+cola_pedidos = cargar_pedidos()
+
+def pedidos():
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\033[1;38;5;165m----------------***-----------------\033[0m")
+        print("\033[1;38;5;10m         Gestión de Pedidos         \033[0m")
+        print("\033[1;38;5;165m----------------***-----------------\033[0m")
+        print("")
+        print("\033[1;38;5;212m1- Nuevo pedido\033[0m")
+        print("\033[1;38;5;213m2- Ver pedidos pendientes\033[0m")
+        print("\033[1;38;5;85m3- Procesar siguiente pedido\033[0m")
+        print("\033[1;38;5;84m4- Volver\033[0m")
+        print("")
+        op = input("Elija una opción: ")
+
+        if op == "1":
+            cliente = input("Nombre del cliente: ")
+            producto = input("Producto solicitado: ")
+            pedido = {"cliente": cliente, "producto": producto, "hora": time.strftime("%H:%M:%S")}
+            cola_pedidos.append(pedido)
+            guardar_pedidos(cola_pedidos)
+            print("Pedido agregado correctamente.")
+            time.sleep(1)
+
+        elif op == "2":
+            if not cola_pedidos:
+                print("No hay pedidos pendientes.")
+            else:
+                print("Pedidos pendientes (en orden de llegada):")
+                for i, p in enumerate(cola_pedidos, 1):
+                    print(f"{i}- {p['cliente']} pidió {p['producto']} a las {p['hora']}")
+            input("Presiona Enter para continuar...")
+
+        elif op == "3":
+            if not cola_pedidos:
+                print("No hay pedidos para procesar.")
+            else:
+                atendido = cola_pedidos.popleft()
+                guardar_pedidos(cola_pedidos)
+                print(f"Procesando pedido de {atendido['cliente']} - {atendido['producto']}")
+            input("Presiona Enter para continuar...")
+
+        elif op == "4":
+            return
+        else:
+            print("Opción no válida.")
+            time.sleep(1)
+
 seleccion = menu()
 while seleccion != 6:
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -259,8 +316,7 @@ while seleccion != 6:
     elif seleccion == 2:
         gestion_productos()
     elif seleccion == 3:
-        print("Sección de pedidos (en desarrollo).")
-        input("\033[91mVolver atrás - Presiona Enter: \033[0m")
+        pedidos()
     elif seleccion == 4:
         print("\033[1;38;5;165m----------------***-----------------\033[0m")
         print("\033[1;38;5;10m      Últimos Productos Vistos     \033[0m")

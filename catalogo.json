@@ -86,5 +86,16 @@
         "Precio": 45000,
         "Stock": true,
         "Código": "DC-TT01"
+    },
+    {
+        "Producto": "1",
+        "Editorial": "1",
+        "Género": "1",
+        "Alineación": "1",
+        "Personaje/Equipo": "1",
+        "Título": "1",
+        "Precio": 1,
+        "Stock": true,
+        "Código": "1"
     }
 ]
